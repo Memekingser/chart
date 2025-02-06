@@ -1,0 +1,17 @@
+{
+  "rules": {
+    ".read": true,
+    "prices": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": ["time", "blockNumber"],
+      "$timestamp": {
+        ".validate": "newData.hasChildren(['time', 'price', 'reserve0', 'reserve1']) &&
+                     newData.child('time').isNumber() &&
+                     newData.child('price').isNumber() &&
+                     newData.child('reserve0').isNumber() &&
+                     newData.child('reserve1').isNumber()"
+      }
+    }
+  }
+} 

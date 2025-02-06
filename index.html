@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BEAR/WETH Price Chart</title>
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="BEAR/WETH Price Chart">
+    <meta property="og:description" content="Real-time BEAR/WETH price chart and trading information">
+    <meta property="og:image" id="og-image" content="">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="BEAR/WETH Price Chart">
+    <meta name="twitter:description" content="Real-time BEAR/WETH price chart and trading information">
+    <meta name="twitter:image" id="twitter-image" content="">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333333;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+            height: calc(100vh - 20px);
+            flex-direction: row;
+        }
+        .left-sidebar {
+            width: 300px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        .main-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+        }
+        .header img {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+        }
+        .header h2 {
+            font-size: 18px;
+            margin: 0;
+        }
+        .price-info {
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+        .price-item {
+            margin-bottom: 8px;
+            font-size: 16px;
+            color: #333333;
+        }
+        .social-links {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+        .market-info {
+            margin-top: 15px;
+            padding: 12px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+        }
+        .market-info h3 {
+            margin: 0 0 12px 0;
+            font-size: 15px;
+            color: #333;
+        }
+        .info-item {
+            margin-bottom: 10px;
+            font-size: 13px;
+            color: #666;
+        }
+        .info-item .label {
+            color: #333;
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+        .info-item .value {
+            word-break: break-all;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .info-item .copy-btn {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 0;
+            margin-left: 5px;
+            font-size: 12px;
+        }
+        .info-item .copy-btn:hover {
+            color: #333;
+        }
+        .token-amount {
+            color: #26a69a;
+            font-weight: 500;
+        }
+        .social-links a {
+            color: #333333;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            transition: background-color 0.3s;
+        }
+        .social-links a:hover {
+            background-color: #e9ecef;
+        }
+        .social-links i {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+            color: #666666;
+        }
+        #chart-container {
+            flex: 1;
+            width: 100%;
+            min-height: 0;
+            background-color: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-sizing: border-box;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .banner {
+            width: 100%;
+            height: 120px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #f8f9fa;
+        }
+        
+        .banner img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .toggle-sidebar {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 25px;
+            background-color: #26a69a;
+            color: white;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            z-index: 1000;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .toggle-sidebar i {
+            font-size: 20px;
+        }
+
+        .toggle-sidebar:hover {
+            transform: scale(1.05);
+        }
+
+        /* 移动端响应式样式 */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 5px;
+                height: 100vh;
+                overflow: auto;
+            }
+            .container {
+                flex-direction: column;
+                height: auto;
+                min-height: 100vh;
+                gap: 10px;
+                padding-bottom: 10px;
+            }
+            .left-sidebar {
+                width: auto;
+                padding: 10px;
+                order: 2;
+                height: auto;
+                max-height: none;
+            }
+            .main-content {
+                order: 1;
+                height: auto;
+            }
+            .author-info {
+                margin: 5px 0;
+                padding: 5px;
+            }
+            .price-info {
+                position: relative;
+                margin-bottom: 10px;
+                padding: 10px;
+            }
+            .price-item {
+                font-size: 13px;
+                margin-bottom: 5px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            #chart-container {
+                height: 350px;
+                padding: 10px;
+                margin-bottom: 10px;
+            }
+            .banner {
+                height: 80px;
+            }
+            .header {
+                margin: 10px 0;
+            }
+            .header h2 {
+                font-size: 16px;
+            }
+            .market-info {
+                margin: 10px 0;
+            }
+            .info-item {
+                margin-bottom: 8px;
+            }
+            .info-item .value {
+                font-size: 11px;
+                word-break: break-all;
+            }
+            .social-links {
+                margin: 10px 0;
+            }
+            .social-links a {
+                padding: 8px 10px;
+            }
+            .toggle-sidebar {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .left-sidebar {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                width: 100%;
+                max-height: 80vh;
+                border-radius: 20px 20px 0 0;
+                transform: translateY(100%);
+                transition: transform 0.3s ease-out;
+                z-index: 999;
+                background-color: white;
+                overflow-y: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .left-sidebar.show {
+                transform: translateY(0);
+            }
+            .left-sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 998;
+            }
+            .left-sidebar-overlay.show {
+                display: block;
+            }
+            .container {
+                padding-bottom: 70px;
+            }
+        }
+
+        /* 超小屏幕优化 */
+        @media screen and (max-width: 375px) {
+            body {
+                padding: 3px;
+            }
+            .container {
+                gap: 5px;
+            }
+            .price-item {
+                font-size: 12px;
+            }
+            #chart-container {
+                height: 300px;
+                padding: 8px;
+            }
+            .banner {
+                height: 60px;
+            }
+            .market-info {
+                padding: 8px;
+            }
+            .info-item {
+                font-size: 11px;
+                margin-bottom: 6px;
+            }
+            .info-item .label {
+                margin-bottom: 2px;
+            }
+            .info-item .value {
+                font-size: 10px;
+            }
+            .social-links a {
+                padding: 6px 8px;
+                font-size: 12px;
+            }
+            .token-amount {
+                font-size: 11px;
+            }
+        }
+        .author-info {
+            text-align: right;
+            margin-bottom: 10px;
+            padding: 5px 10px;
+        }
+        .author-info a {
+            color: #666;
+            text-decoration: none;
+            font-size: 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.3s;
+        }
+        .author-info a:hover {
+            color: #333;
+        }
+        .author-info i {
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-content">
+            <div class="author-info">
+                <a href="https://t.me/cookbill" target="_blank">
+                    <i class="fab fa-telegram"></i>
+                    Made by Bill
+                </a>
+            </div>
+            <div class="price-info">
+                <div class="price-item" id="current-price">Current Price: Loading...</div>
+                <div class="price-item" id="24h-change">24h Change: Loading...</div>
+            </div>
+            <div id="chart-container"></div>
+        </div>
+        <div class="left-sidebar-overlay"></div>
+        <div class="left-sidebar">
+            <div class="banner">
+                <img src="./src/banner.png" alt="BERA Banner">
+            </div>
+            <div class="header">
+                <img src="https://raw.githubusercontent.com/fackjack001/tokenlist/main/logo/bear.jpg" alt="BERA Logo">
+                <h2>BEAR/WETH</h2>
+            </div>
+            <div class="market-info">
+                <h3>Market Data</h3>
+                <div class="info-item">
+                    <div class="label">Market Cap</div>
+                    <div class="value" id="market-cap">Loading...</div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Liquidity Pool</div>
+                    <div class="value">
+                        <div class="token-amount" id="bear-amount">BEAR: Loading...</div>
+                        <div class="token-amount" id="weth-amount">WETH: Loading...</div>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="label">BEAR Contract</div>
+                    <div class="value">
+                        <span id="bear-contract">0x77df181B1d3f38fA32f7Ab661Eb71cAA0dAdC620</span>
+                        <button class="copy-btn" onclick="copyToClipboard('bear-contract')">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="label">Pair Contract</div>
+                    <div class="value">
+                        <span id="pair-contract">0x4186aEC56e9C0b09678F96Ed028bf77b33A62E3e</span>
+                        <button class="copy-btn" onclick="copyToClipboard('pair-contract')">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <div class="label">WETH Contract</div>
+                    <div class="value">
+                        <span id="weth-contract">0x2F6F07CDcf3588944Bf4C42aC74ff24bF56e7590</span>
+                        <button class="copy-btn" onclick="copyToClipboard('weth-contract')">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="social-links">
+                <a href="https://x.com/Bear_Berachain" target="_blank">
+                    <i class="fab fa-twitter"></i>
+                    <span>Twitter</span>
+                </a>
+                <a href="https://t.me/bearcoinbera" target="_blank">
+                    <i class="fab fa-telegram"></i>
+                    <span>Telegram</span>
+                </a>
+                <a href="https://dyorswap.finance/swap/?chainId=80094&outputCurrency=0x77df181B1d3f38fA32f7Ab661Eb71cAA0dAdC620&inputCurrency=0x2F6F07CDcf3588944Bf4C42aC74ff24bF56e7590" target="_blank">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Trade</span>
+                </a>
+                <a href="#" target="_blank">
+                    <i class="fas fa-globe"></i>
+                    <span>Website</span>
+                </a>
+            </div>
+        </div>
+        <button class="toggle-sidebar" aria-label="Toggle info panel">
+            <i class="fas fa-info"></i>
+        </button>
+    </div>
+    <script>
+        function copyToClipboard(elementId) {
+            const text = document.getElementById(elementId).textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard');
+            }).catch(err => {
+                console.error('Copy failed:', err);
+            });
+        }
+
+        // 添加折叠面板控制
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleBtn = document.querySelector('.toggle-sidebar');
+            const sidebar = document.querySelector('.left-sidebar');
+            const overlay = document.querySelector('.left-sidebar-overlay');
+            
+            function toggleSidebar() {
+                sidebar.classList.toggle('show');
+                overlay.classList.toggle('show');
+                toggleBtn.innerHTML = sidebar.classList.contains('show') 
+                    ? '<i class="fas fa-times"></i>' 
+                    : '<i class="fas fa-info"></i>';
+            }
+
+            toggleBtn.addEventListener('click', toggleSidebar);
+            overlay.addEventListener('click', toggleSidebar);
+
+            // 添加触摸滑动关闭
+            let touchStartY = 0;
+            let touchEndY = 0;
+
+            sidebar.addEventListener('touchstart', function(e) {
+                touchStartY = e.touches[0].clientY;
+            });
+
+            sidebar.addEventListener('touchmove', function(e) {
+                touchEndY = e.touches[0].clientY;
+                const diff = touchEndY - touchStartY;
+                
+                if (diff > 0) { // 向下滑动
+                    if (sidebar.scrollTop === 0) { // 只有在顶部时才允许下滑关闭
+                        e.preventDefault();
+                        sidebar.style.transform = `translateY(${diff}px)`;
+                    }
+                }
+            });
+
+            sidebar.addEventListener('touchend', function() {
+                const diff = touchEndY - touchStartY;
+                sidebar.style.transform = '';
+                
+                if (diff > 100) { // 如果下滑距离超过100px，关闭面板
+                    toggleSidebar();
+                }
+            });
+        });
+    </script>
+    <script type="module" src="./src/index.js"></script>
+</body>
+</html> 
